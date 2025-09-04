@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud To-Do List</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; }
+    h2 { color: #333; }
+    #taskInput { padding: 8px; width: 60%; }
+    button { padding: 8px 12px; margin: 5px; }
+    ul { list-style-type: none; padding: 0; max-width: 400px; margin: auto; }
+    li { background: #fff; padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+    li button { background: red; color: white; border: none; border-radius: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>☁️ Cloud To-Do List</h2>
+  <input type="text" id="taskInput" placeholder="Enter a task">
+  <button onclick="addTask()">Add Task</button>
+  <ul id="taskList"></ul>
+
+  <!-- Firebase v9 Modular SDK -->
+  <script type="module">
+    // ✅ Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    // 🔹 Step 1: Your Firebase config (replace with your Firebase project details)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // 🔹 Step 2: Initialize Firebase & Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const taskInput = document.getElementById('taskInput');
+    const taskList = document.getElementById('taskList');
+
+    // 🔹 Add Task
+    async function addTask() {
+      if (taskInput.value.trim() !== '') {
+        await addDoc(collection(db, "tasks"), { text: taskInput.value });
+        taskInput.value = '';
+      } else {
+        alert('Please enter a task.');
+      }
+    }
+    window.addTask = addTask; // ✅ Expose function to HTML button
+
+    // 🔹 Delete Task
+    async function deleteTask(id) {
+      await deleteDoc(doc(db, "tasks", id));
+    }
+
+    // 🔹 Real-time listener
+    onSnapshot(collection(db, "tasks"), snapshot => {
+      taskList.innerHTML = '';
+      snapshot.forEach(docSnap => {
+        const li = document.createElement('li');
+        li.textContent = docSnap.data().text;
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteTask(docSnap.id);
+
+        li.appendChild(delBtn);
+        taskList.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
+
